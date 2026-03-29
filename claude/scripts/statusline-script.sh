@@ -66,7 +66,7 @@ if command -v bun >/dev/null 2>&1; then
         time_left=$(echo "$ccusage_output" | grep -oE '[0-9]+h [0-9]+m left')
         
         # Get token data from ccusage blocks --active for session cost and time remaining
-        blocks_json=$(bun x ccusage blocks --active --json 2>/dev/null)
+        blocks_json=$(bun x ccusage blocks --active --json --token-limit max 2>/dev/null)
         if [ -n "$blocks_json" ]; then
             # Get the actual session cost from JSON data
             json_session_cost=$(echo "$blocks_json" | jq -r '.blocks[0].costUSD // empty' 2>/dev/null)
@@ -83,11 +83,22 @@ if command -v bun >/dev/null 2>&1; then
                 mins=$((remaining_minutes % 60))
                 time_left="${hours}h ${mins}m left"
             fi
+
+            # Get token usage percentage (current tokens used / block limit)
+            token_limit=$(echo "$blocks_json" | jq -r '.blocks[0].tokenLimitStatus.limit // empty' 2>/dev/null)
+            total_tokens=$(echo "$blocks_json" | jq -r '.blocks[0].totalTokens // empty' 2>/dev/null)
+            if [ -n "$token_limit" ] && [ "$token_limit" != "null" ] && [ -n "$total_tokens" ]; then
+                token_pct=$(echo "$total_tokens $token_limit" | awk '{printf "%d", ($1/$2)*100}')
+            fi
         fi
         
         # Build cost information string
         cost_parts=()
-        
+
+        if [ -n "$token_pct" ]; then
+            cost_parts+=("📊 ${token_pct}%")
+        fi
+
         # Show session cost if available and not N/A, otherwise show block cost
         if [ -n "$session_cost" ] && [ "$session_cost" != "N/A" ] && [ "$session_cost" != "" ]; then
             cost_parts+=("💸 $session_cost")
@@ -103,7 +114,7 @@ if command -v bun >/dev/null 2>&1; then
         if [ -n "$time_left" ]; then
             cost_parts+=("⏱️ $time_left")
         fi
-        
+
         # Join cost parts with " | "
         if [ ${#cost_parts[@]} -gt 0 ]; then
             cost_info=" | "

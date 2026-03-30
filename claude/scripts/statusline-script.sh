@@ -103,14 +103,6 @@ if command -v bun >/dev/null 2>&1; then
     # Build status info string
     cost_parts=()
 
-    if [ -n "$ctx_pct" ]; then
-        cost_parts+=("🧠 ${ctx_pct}% (${ctx_ratio})")
-    fi
-
-    if [ -n "$weekly_pct" ]; then
-        cost_parts+=("📅 ${weekly_pct}% (${weekly_ratio})")
-    fi
-
     if [ -n "$time_left" ]; then
         cost_parts+=("⏱️ $time_left")
     fi

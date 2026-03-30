@@ -71,11 +71,8 @@ if command -v bun >/dev/null 2>&1; then
                 (.message.usage.cache_creation_input_tokens // 0)
             else 0 end
         ' < "$transcript_path" 2>/dev/null)
-        if [ -z "$ctx_tokens" ] || [ "$ctx_tokens" = "0" ]; then
-            ctx_tokens=20000  # baseline for system prompt + tools
-        fi
-        ctx_pct=$(echo "$ctx_tokens $max_context" | awk '{printf "%d", ($1/$2)*100}')
-        ctx_ratio=$(fmt_ratio "$ctx_tokens" "$max_context")
+        ctx_pct=$(echo "${ctx_tokens:-0} $max_context" | awk '{printf "%d", ($1/$2)*100}')
+        ctx_ratio=$(fmt_ratio "${ctx_tokens:-0}" "$max_context")
     fi
 
     # Block quota % and time remaining from ccusage
@@ -91,15 +88,16 @@ if command -v bun >/dev/null 2>&1; then
 
         # Weekly token quota % (weekly tokens / 34 blocks × block limit)
         token_limit=$(echo "$blocks_json" | jq -r '.blocks[0].tokenLimitStatus.limit // empty' 2>/dev/null)
-        if [ -n "$token_limit" ] && [ "$token_limit" != "null" ]; then
-            weekly_json=$(bun x ccusage weekly --json 2>/dev/null)
-            weekly_tokens=$(echo "$weekly_json" | jq -r '.weekly[-1].totalTokens // empty' 2>/dev/null)
-            weekly_limit=$(echo "$token_limit" | awk '{printf "%d", $1 * 34}')
-            if [ -n "$weekly_tokens" ] && [ "$weekly_tokens" != "null" ]; then
-                weekly_pct=$(echo "$weekly_tokens $weekly_limit" | awk '{printf "%d", ($1/$2)*100}')
-                weekly_ratio=$(fmt_ratio "$weekly_tokens" "$weekly_limit")
-            fi
-        fi
+    fi
+
+    # Use Max plan block limit as fallback when no active block
+    token_limit=${token_limit:-1499903}
+    weekly_json=$(bun x ccusage weekly --json 2>/dev/null)
+    weekly_tokens=$(echo "$weekly_json" | jq -r '.weekly[-1].totalTokens // empty' 2>/dev/null)
+    weekly_limit=$(echo "$token_limit" | awk '{printf "%d", $1 * 34}')
+    if [ -n "$weekly_tokens" ] && [ "$weekly_tokens" != "null" ]; then
+        weekly_pct=$(echo "$weekly_tokens $weekly_limit" | awk '{printf "%d", ($1/$2)*100}')
+        weekly_ratio=$(fmt_ratio "$weekly_tokens" "$weekly_limit")
     fi
 
     # Build status info string

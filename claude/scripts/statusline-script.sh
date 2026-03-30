@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Claude Code Status Line Script
-# Displays project info and cost information from ccusage
+# Displays project info and token usage from ccusage
 
 # Read JSON input from stdin
 input=$(cat)
@@ -42,98 +42,90 @@ branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'N/A')
 # Base status line with existing information
 base_status="📁 $folder${lang_info} | 🌿 $branch | 🤖 $model"
 
-# Try to get ccusage information
+# Token ratio formatting helper (awk function shared by multiple fields)
+fmt_ratio() {
+    echo "$1 $2" | awk '{
+        if ($1 >= 1000000) t = sprintf("%.1fM", $1/1000000)
+        else if ($1 >= 1000) t = sprintf("%dK", $1/1000)
+        else t = sprintf("%d", $1)
+        if ($2 >= 1000000) l = sprintf("%.1fM", $2/1000000)
+        else if ($2 >= 1000) l = sprintf("%dK", $2/1000)
+        else l = sprintf("%d", $2)
+        printf "%s/%s", t, l
+    }'
+}
+
+# Try to get usage information
 cost_info=""
 if command -v bun >/dev/null 2>&1; then
-    # Get session ID for additional data
-    session_id=$(echo "$input" | jq -r '.session_id // empty')
-    
-    # Use ccusage statusline command which is designed for this purpose
-    ccusage_output=$(echo "$input" | bun x ccusage statusline 2>/dev/null)
-    if [ $? -eq 0 ] && [ -n "$ccusage_output" ]; then
-        # Parse ccusage statusline output format: 🤖 Model | 💰 session / daily / block (time left) | 🔥 rate
-        
-        # Extract session cost (before "session")
-        session_cost=$(echo "$ccusage_output" | grep -oE '\$[0-9]+\.[0-9]+ session|N/A session' | sed 's/ session//')
-        
-        # Extract daily cost (before "today")
-        daily_cost=$(echo "$ccusage_output" | grep -oE '\$[0-9]+\.[0-9]+ today' | sed 's/ today//')
-        
-        # Extract block cost (before "block")
-        block_cost=$(echo "$ccusage_output" | grep -oE '\$[0-9]+\.[0-9]+ block' | sed 's/ block//')
-        
-        # Extract time remaining (inside parentheses)
-        time_left=$(echo "$ccusage_output" | grep -oE '[0-9]+h [0-9]+m left')
-        
-        # Get token data from ccusage blocks --active for session cost and time remaining
-        blocks_json=$(bun x ccusage blocks --active --json --token-limit max 2>/dev/null)
-        if [ -n "$blocks_json" ]; then
-            # Get the actual session cost from JSON data
-            json_session_cost=$(echo "$blocks_json" | jq -r '.blocks[0].costUSD // empty' 2>/dev/null)
-            
-            # Override session cost with JSON data if available and more accurate
-            if [ -n "$json_session_cost" ] && [ "$json_session_cost" != "null" ]; then
-                session_cost="\$$(printf "%.2f" "$json_session_cost")"
-            fi
-            
-            # Get remaining minutes from projection
-            remaining_minutes=$(echo "$blocks_json" | jq -r '.blocks[0].projection.remainingMinutes // empty' 2>/dev/null)
-            if [ -n "$remaining_minutes" ] && [ "$remaining_minutes" != "null" ] && [ "$remaining_minutes" != "0" ]; then
-                hours=$((remaining_minutes / 60))
-                mins=$((remaining_minutes % 60))
-                time_left="${hours}h ${mins}m left"
-            fi
+    # Context window usage from transcript (same method as context-bar.sh)
+    transcript_path=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+    max_context=$(echo "$input" | jq -r '.context_window.context_window_size // empty' 2>/dev/null)
+    if [ -n "$transcript_path" ] && [ -f "$transcript_path" ] && [ -n "$max_context" ] && [ "$max_context" != "0" ]; then
+        ctx_tokens=$(jq -s '
+            map(select(.message.usage and .isSidechain != true and .isApiErrorMessage != true)) |
+            last |
+            if . then
+                (.message.usage.input_tokens // 0) +
+                (.message.usage.cache_read_input_tokens // 0) +
+                (.message.usage.cache_creation_input_tokens // 0)
+            else 0 end
+        ' < "$transcript_path" 2>/dev/null)
+        if [ -z "$ctx_tokens" ] || [ "$ctx_tokens" = "0" ]; then
+            ctx_tokens=20000  # baseline for system prompt + tools
+        fi
+        ctx_pct=$(echo "$ctx_tokens $max_context" | awk '{printf "%d", ($1/$2)*100}')
+        ctx_ratio=$(fmt_ratio "$ctx_tokens" "$max_context")
+    fi
 
-            # Get token usage percentage (current tokens used / block limit)
-            token_limit=$(echo "$blocks_json" | jq -r '.blocks[0].tokenLimitStatus.limit // empty' 2>/dev/null)
-            total_tokens=$(echo "$blocks_json" | jq -r '.blocks[0].totalTokens // empty' 2>/dev/null)
-            if [ -n "$token_limit" ] && [ "$token_limit" != "null" ]; then
-                token_pct=$(echo "${total_tokens:-0} $token_limit" | awk '{printf "%d", ($1/$2)*100}')
-                token_ratio=$(echo "${total_tokens:-0} $token_limit" | awk '{
-                    if ($1 >= 1000000) t = sprintf("%.1fM", $1/1000000)
-                    else if ($1 >= 1000) t = sprintf("%dK", $1/1000)
-                    else t = sprintf("%d", $1)
-                    if ($2 >= 1000000) l = sprintf("%.1fM", $2/1000000)
-                    else if ($2 >= 1000) l = sprintf("%dK", $2/1000)
-                    else l = sprintf("%d", $2)
-                    printf "%s/%s", t, l
-                }')
+    # Block quota % and time remaining from ccusage
+    blocks_json=$(bun x ccusage blocks --active --json --token-limit max 2>/dev/null)
+    if [ -n "$blocks_json" ]; then
+        # Time remaining
+        remaining_minutes=$(echo "$blocks_json" | jq -r '.blocks[0].projection.remainingMinutes // empty' 2>/dev/null)
+        if [ -n "$remaining_minutes" ] && [ "$remaining_minutes" != "null" ] && [ "$remaining_minutes" != "0" ]; then
+            hours=$((remaining_minutes / 60))
+            mins=$((remaining_minutes % 60))
+            time_left="${hours}h ${mins}m left"
+        fi
+
+        # Weekly token quota % (weekly tokens / 34 blocks × block limit)
+        token_limit=$(echo "$blocks_json" | jq -r '.blocks[0].tokenLimitStatus.limit // empty' 2>/dev/null)
+        if [ -n "$token_limit" ] && [ "$token_limit" != "null" ]; then
+            weekly_json=$(bun x ccusage weekly --json 2>/dev/null)
+            weekly_tokens=$(echo "$weekly_json" | jq -r '.weekly[-1].totalTokens // empty' 2>/dev/null)
+            weekly_limit=$(echo "$token_limit" | awk '{printf "%d", $1 * 34}')
+            if [ -n "$weekly_tokens" ] && [ "$weekly_tokens" != "null" ]; then
+                weekly_pct=$(echo "$weekly_tokens $weekly_limit" | awk '{printf "%d", ($1/$2)*100}')
+                weekly_ratio=$(fmt_ratio "$weekly_tokens" "$weekly_limit")
             fi
         fi
-        
-        # Build cost information string
-        cost_parts=()
+    fi
 
-        if [ -n "$token_pct" ]; then
-            cost_parts+=("📊 ${token_pct}% (${token_ratio})")
-        fi
+    # Build status info string
+    cost_parts=()
 
-        # Show session cost if available and not N/A, otherwise show block cost
-        if [ -n "$session_cost" ] && [ "$session_cost" != "N/A" ] && [ "$session_cost" != "" ]; then
-            cost_parts+=("💸 $session_cost")
-        elif [ -n "$block_cost" ] && [ "$block_cost" != "" ]; then
-            # Show block cost as session cost if no session cost available
-            cost_parts+=("💸 $block_cost")
-        fi
-        
-        if [ -n "$daily_cost" ]; then
-            cost_parts+=("💰 $daily_cost/day")
-        fi
-        
-        if [ -n "$time_left" ]; then
-            cost_parts+=("⏱️ $time_left")
-        fi
+    if [ -n "$ctx_pct" ]; then
+        cost_parts+=("🧠 ${ctx_pct}% (${ctx_ratio})")
+    fi
 
-        # Join cost parts with " | "
-        if [ ${#cost_parts[@]} -gt 0 ]; then
-            cost_info=" | "
-            for i in "${!cost_parts[@]}"; do
-                if [ $i -gt 0 ]; then
-                    cost_info="${cost_info} | "
-                fi
-                cost_info="${cost_info}${cost_parts[$i]}"
-            done
-        fi
+    if [ -n "$weekly_pct" ]; then
+        cost_parts+=("📅 ${weekly_pct}% (${weekly_ratio})")
+    fi
+
+    if [ -n "$time_left" ]; then
+        cost_parts+=("⏱️ $time_left")
+    fi
+
+    # Join parts with " | "
+    if [ ${#cost_parts[@]} -gt 0 ]; then
+        cost_info=" | "
+        for i in "${!cost_parts[@]}"; do
+            if [ $i -gt 0 ]; then
+                cost_info="${cost_info} | "
+            fi
+            cost_info="${cost_info}${cost_parts[$i]}"
+        done
     fi
 fi
 

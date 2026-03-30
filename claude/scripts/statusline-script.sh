@@ -87,8 +87,8 @@ if command -v bun >/dev/null 2>&1; then
             # Get token usage percentage (current tokens used / block limit)
             token_limit=$(echo "$blocks_json" | jq -r '.blocks[0].tokenLimitStatus.limit // empty' 2>/dev/null)
             total_tokens=$(echo "$blocks_json" | jq -r '.blocks[0].totalTokens // empty' 2>/dev/null)
-            if [ -n "$token_limit" ] && [ "$token_limit" != "null" ] && [ -n "$total_tokens" ]; then
-                token_pct=$(echo "$total_tokens $token_limit" | awk '{printf "%d", ($1/$2)*100}')
+            if [ -n "$token_limit" ] && [ "$token_limit" != "null" ]; then
+                token_pct=$(echo "${total_tokens:-0} $token_limit" | awk '{printf "%d", ($1/$2)*100}')
             fi
         fi
         

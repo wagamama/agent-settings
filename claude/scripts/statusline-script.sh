@@ -89,6 +89,15 @@ if command -v bun >/dev/null 2>&1; then
             total_tokens=$(echo "$blocks_json" | jq -r '.blocks[0].totalTokens // empty' 2>/dev/null)
             if [ -n "$token_limit" ] && [ "$token_limit" != "null" ]; then
                 token_pct=$(echo "${total_tokens:-0} $token_limit" | awk '{printf "%d", ($1/$2)*100}')
+                token_ratio=$(echo "${total_tokens:-0} $token_limit" | awk '{
+                    if ($1 >= 1000000) t = sprintf("%.1fM", $1/1000000)
+                    else if ($1 >= 1000) t = sprintf("%dK", $1/1000)
+                    else t = sprintf("%d", $1)
+                    if ($2 >= 1000000) l = sprintf("%.1fM", $2/1000000)
+                    else if ($2 >= 1000) l = sprintf("%dK", $2/1000)
+                    else l = sprintf("%d", $2)
+                    printf "%s/%s", t, l
+                }')
             fi
         fi
         
@@ -96,7 +105,7 @@ if command -v bun >/dev/null 2>&1; then
         cost_parts=()
 
         if [ -n "$token_pct" ]; then
-            cost_parts+=("📊 ${token_pct}%")
+            cost_parts+=("📊 ${token_pct}% (${token_ratio})")
         fi
 
         # Show session cost if available and not N/A, otherwise show block cost

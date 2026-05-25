@@ -19,3 +19,11 @@
 - Use clear commit messages that describe the intent of each task category.
 - Never push unless the user explicitly chooses `Commit and push`.
 - If no remote or upstream branch is configured, explain the situation and ask before changing git remote or branch configuration.
+
+## Task Review
+
+- Before the final change summary and commit decision for non-trivial work, perform a cross-reference review.
+- Prefer using Codex with an available review skill or review subagent when one exists, such as `superpowers:requesting-code-review` or a Codex subagent.
+- If no review skill or subagent is available, perform the cross-reference review locally.
+- Cross-reference the user's request, the implementation diff, verification results, and applicable project instructions such as `AGENTS.md`.
+- Address any review findings before reporting a positive review result.

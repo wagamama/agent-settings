@@ -14,3 +14,15 @@ do
   cmp -s "$SOURCE_FILE" "$target"
   test "$(stat -f "%Lp" "$target")" = "644"
 done
+
+for target_dir in \
+  "$ROOT_DIR/claude/scripts" \
+  "$ROOT_DIR/gemini/scripts" \
+  "$ROOT_DIR/hermes/scripts"
+do
+  for source_script in "$ROOT_DIR"/codex/scripts/*; do
+    target_script="$target_dir/$(basename "$source_script")"
+    cmp -s "$source_script" "$target_script"
+    test -x "$target_script"
+  done
+done

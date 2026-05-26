@@ -8,7 +8,8 @@ SOURCE_FILE="$ROOT_DIR/codex/AGENTS.md"
 
 for target in \
   "$ROOT_DIR/claude/CLAUDE.md" \
-  "$ROOT_DIR/gemini/GEMINI.md"
+  "$ROOT_DIR/gemini/GEMINI.md" \
+  "$ROOT_DIR/hermes/AGENTS.md"
 do
   cmp -s "$SOURCE_FILE" "$target"
   test "$(stat -f "%Lp" "$target")" = "644"

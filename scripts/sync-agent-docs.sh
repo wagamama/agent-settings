@@ -7,6 +7,7 @@ SOURCE_FILE="$ROOT_DIR/codex/AGENTS.md"
 targets=(
   "$ROOT_DIR/claude/CLAUDE.md"
   "$ROOT_DIR/gemini/GEMINI.md"
+  "$ROOT_DIR/hermes/AGENTS.md"
 )
 
 for target in "${targets[@]}"; do

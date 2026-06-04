@@ -4,6 +4,18 @@
 
 - Do not include personal or machine-specific data in README files, documentation, install commands, examples, or generated project files unless the user explicitly requests it. This includes local usernames, absolute home-directory paths, private repository aliases, hostnames, email addresses, tokens, account IDs, and other identifying local details. Use placeholders or portable commands such as `$(pwd)` instead.
 
+## Documentation Maintenance
+
+- When making structural changes, significant feature additions, or breaking API changes, proactively update corresponding documentation (e.g., README.md, CHANGELOG.md, or docstrings) to ensure it reflects the current state of the code.
+
+## Security & Code Quality
+
+- Perform a light security review of all new code: check for potential injection vulnerabilities, hardsoded credentials in the logic itself, or insecure patterns. If the project includes a linter or security scanner (e.g., `eslint`, `bandit`), run it as part of the verification step.
+
+## Error Handling & Failure Protocol
+
+- When a command returns a non-zero exit code or an unexpected error occurs, do not immediately attempt a fix. First, capture and analyze the full error output; if the cause is unclear, propose a diagnostic step (like checking environment variables) before proceeding with a repair.
+
 ## Completion, Review, and Commit Workflow
 
 - When a task is complete, verify the result with the relevant checks, tests, inspections, or review steps before calling the work done.

@@ -22,9 +22,8 @@
 - If review feedback exists, address it first. Continue to the commit decision only after the review result is positive.
 - After a positive review result, summarize all changes made in the task so the user can make an informed version-control decision.
 - After the change summary, ask the user how to proceed with version control and offer exactly these options:
-  1. `Do not commit` - Leave all changes uncommitted.
-  2. `Commit only` - Create one or more commits, grouped by task category when appropriate, but do not push.
-  3. `Commit and push` - Create one or more commits, grouped by task category when appropriate, then push to the configured remote.
+  1. `Commit only` - Create one or more commits, grouped by task category when appropriate, but do not push.
+  2. `Commit and push` - Create one or more commits, grouped by task category when appropriate, then push to the configured remote.
 - Treat the user's choice as applying only to the task just completed. Do not reuse or carry forward a previous commit decision for later tasks.
 - When committing, split commits by task category if the work naturally spans multiple categories. Keep each commit focused and independently understandable.
 - Do not mix unrelated changes in the same commit.

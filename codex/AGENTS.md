@@ -34,7 +34,7 @@
 ## Task Review
 
 - Before the final change summary and commit decision for non-trivial work, perform a cross-reference review.
-- Prefer using Codex with an available review skill or review subagent when one exists, such as `superpowers:requesting-code-review` or a Codex subagent.
-- If no review skill or subagent is available, perform the cross-reference review locally.
+- Review tool priority: 1. Codex, 2. Claude Code.
+- Review agent usage priority: 1. Use a different agent from the one performing the task when available. For example, if the task is being performed by Codex, use Claude Code as the first-priority cross-check agent. 2. If no other agent is available, use self-subagents with available review skills.
 - Cross-reference the user's request, the implementation diff, verification results, and applicable project instructions such as `AGENTS.md`.
 - Address any review findings before reporting a positive review result.

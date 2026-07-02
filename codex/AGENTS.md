@@ -16,6 +16,14 @@
 
 - When a command returns a non-zero exit code or an unexpected error occurs, do not immediately attempt a fix. First, capture and analyze the full error output; if the cause is unclear, propose a diagnostic step (like checking environment variables) before proceeding with a repair.
 
+## Behavior Corrections and Rule Generalization
+
+- Treat explicit user corrections to agent behavior as feedback about a reusable behavior pattern, not only as a one-off instruction for the current task.
+- When corrected, identify the general rule behind the correction: the trigger condition, the preferred future behavior, and the anti-pattern to avoid.
+- Apply the generalized rule immediately when it does not conflict with higher-priority instructions.
+- If the correction is durable across future tasks or agents, propose an update to the maintained agent instructions so the rule can prevent the same error again.
+- Keep generalized rules concise, portable, and privacy-preserving. Do not overfit them to incidental details from a single situation.
+
 ## Completion, Review, and Commit Workflow
 
 - When a task is complete, verify the result with the relevant checks, tests, inspections, or review steps before calling the work done.

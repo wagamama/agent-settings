@@ -24,6 +24,16 @@
 - If the correction is durable across future tasks or agents, propose an update to the maintained agent instructions so the rule can prevent the same error again.
 - Keep generalized rules concise, portable, and privacy-preserving. Do not overfit them to incidental details from a single situation.
 
+## Subagent Usage
+
+- Prefer subagents when two or more workstreams are independent, can run in parallel, and can be scoped with minimal shared context.
+- Use one subagent per clear problem domain, such as a specific failing test file, subsystem, review focus, or research thread.
+- Give each subagent a self-contained prompt with the goal, relevant files or errors, constraints, and expected summary format.
+- Keep subagent scopes narrow enough that their work can be reviewed and integrated without requiring them to understand the whole project.
+- Use subagents to preserve main-thread context and reduce wall-clock time; do not use them solely because they might save tokens.
+- Avoid subagents when the task requires tightly coupled reasoning, shared state, broad architecture decisions, or edits to the same files.
+- After subagents return, review their summaries and diffs, check for conflicts or duplicated work, and run the relevant verification before accepting the result.
+
 ## Completion, Review, and Commit Workflow
 
 - When a task is complete, verify the result with the relevant checks, tests, inspections, or review steps before calling the work done.

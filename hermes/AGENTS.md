@@ -2,61 +2,42 @@
 
 ## Writing Style
 
-- Always use ASD-STE100 Simplified Technical English. Follow Zinsser's four principles of quality writing: 1. Simplicity, 2. Brevity, 3. Clarity, 4. Humanity.
+- Use ASD-STE100 Simplified Technical English and Zinsser's four principles: simplicity, brevity, clarity, and humanity.
 
-## Documentation Privacy
+## Permissions
 
-- Do not include personal or machine-specific data in README files, documentation, install commands, examples, or generated project files unless the user explicitly requests it. This includes local usernames, absolute home-directory paths, private repository aliases, hostnames, email addresses, tokens, account IDs, and other identifying local details. Use placeholders or portable commands such as `$(pwd)` instead.
+- For the full requested task, prefer safe, authorized methods that need fewer permission requests. Use existing approval, sandboxed tools, and reversible steps when suitable. Never bypass a required approval or weaken safety or scope to avoid a request.
 
-## Documentation Maintenance
+## Documentation
 
-- When making structural changes, significant feature additions, or breaking API changes, proactively update corresponding documentation (e.g., README.md, CHANGELOG.md, or docstrings) to ensure it reflects the current state of the code.
+- Keep personal and machine-specific data out of README files, documentation, install commands, examples, and generated project files unless the user explicitly asks for it. This includes usernames, home paths, private repository aliases, hostnames, email addresses, tokens, and account IDs. Use placeholders or portable commands such as `$(pwd)`.
+- Update related documentation after structural changes, significant features, or breaking API changes.
 
-## Security & Code Quality
+## Security and Code Quality
 
-- Perform a light security review of all new code: check for potential injection vulnerabilities, hardsoded credentials in the logic itself, or insecure patterns. If the project includes a linter or security scanner (e.g., `eslint`, `bandit`), run it as part of the verification step.
+- Review new code for injection risks, hardcoded credentials, and insecure patterns. Run the project's linter or security scanner, if present, during verification.
 
-## Error Handling & Failure Protocol
+## Errors
 
-- When a command returns a non-zero exit code or an unexpected error occurs, do not immediately attempt a fix. First, capture and analyze the full error output; if the cause is unclear, propose a diagnostic step (like checking environment variables) before proceeding with a repair.
+- After a failed command or unexpected error, capture and analyze the full output before a fix. If the cause is unclear, propose a diagnostic step before repair.
 
-## Behavior Corrections and Rule Generalization
+## Behavior Corrections
 
-- Treat explicit user corrections to agent behavior as feedback about a reusable behavior pattern, not only as a one-off instruction for the current task.
-- When corrected, identify the general rule behind the correction: the trigger condition, the preferred future behavior, and the anti-pattern to avoid.
-- Apply the generalized rule immediately when it does not conflict with higher-priority instructions.
-- If the correction is durable across future tasks or agents, propose an update to the maintained agent instructions so the rule can prevent the same error again.
-- Keep generalized rules concise, portable, and privacy-preserving. Do not overfit them to incidental details from a single situation.
+- Treat an explicit correction as a reusable rule. Identify its trigger, preferred behavior, and anti-pattern; apply it now unless a higher-priority rule conflicts.
+- For a durable correction, propose a concise, portable update to the maintained agent instructions. Avoid details unique to one case.
 
-## Subagent Usage
+## Subagents
 
-- Prefer subagents when two or more workstreams are independent, can run in parallel, and can be scoped with minimal shared context.
-- Use one subagent per clear problem domain, such as a specific failing test file, subsystem, review focus, or research thread.
-- Give each subagent a self-contained prompt with the goal, relevant files or errors, constraints, and expected summary format.
-- Keep subagent scopes narrow enough that their work can be reviewed and integrated without requiring them to understand the whole project.
-- Use subagents to preserve main-thread context and reduce wall-clock time; do not use them solely because they might save tokens.
-- Avoid subagents when the task requires tightly coupled reasoning, shared state, broad architecture decisions, or edits to the same files.
-- After subagents return, review their summaries and diffs, check for conflicts or duplicated work, and run the relevant verification before accepting the result.
+- Prefer subagents for independent work that can run in parallel with little shared context. Use one per clear problem domain; avoid them for coupled work, shared state, broad architecture choices, or edits to the same files.
+- Give each subagent a narrow, self-contained task with the goal, relevant files or errors, constraints, and expected summary. Use them to preserve context and time, not only to save tokens.
+- Review returned summaries and diffs for conflicts or duplicate work, then run relevant checks before accepting the result.
 
-## Completion, Review, and Commit Workflow
+## Completion, Review, and Version Control
 
-- When a task is complete, verify the result with the relevant checks, tests, inspections, or review steps before calling the work done.
-- If review feedback exists, address it first. Continue to the commit decision only after the review result is positive.
-- After a positive review result, summarize all changes made in the task so the user can make an informed version-control decision.
-- After the change summary, ask the user how to proceed with version control and offer exactly these options:
-  1. `Commit only` - Create one or more commits, grouped by task category when appropriate, but do not push.
-  2. `Commit and push` - Create one or more commits, grouped by task category when appropriate, then push to the configured remote.
-- Treat the user's choice as applying only to the task just completed. Do not reuse or carry forward a previous commit decision for later tasks.
-- When committing, split commits by task category if the work naturally spans multiple categories. Keep each commit focused and independently understandable.
-- Do not mix unrelated changes in the same commit.
-- Use clear commit messages that describe the intent of each task category.
-- Never push unless the user explicitly chooses `Commit and push`.
-- If no remote or upstream branch is configured, explain the situation and ask before changing git remote or branch configuration.
-
-## Task Review
-
-- Before the final change summary and commit decision for non-trivial work, perform a cross-reference review.
-- Review tool priority: 1. Codex, 2. Claude Code.
-- Review agent usage priority: 1. Use a different agent from the one performing the task when available. For example, if the task is being performed by Codex, use Claude Code as the first-priority cross-check agent. 2. If no other agent is available, use self-subagents with available review skills.
-- Cross-reference the user's request, the implementation diff, verification results, and applicable project instructions such as `AGENTS.md`.
-- Address any review findings before reporting a positive review result.
+- Verify completed work with relevant checks, tests, inspections, or review steps.
+- Before the final summary and commit decision for non-trivial work, cross-reference the request, diff, verification results, and project instructions. Use a different review agent when available (Claude Code for Codex work); otherwise use self-subagents with review skills. For review tools, prefer Codex, then Claude Code. Address findings before calling the review positive.
+- After a positive review, summarize all task changes so the user can make an informed version-control decision. Then offer exactly these choices:
+  1. `Commit only` - Make focused commits by task category when appropriate; do not push.
+  2. `Commit and push` - Make focused commits by task category when appropriate; then push to the configured remote.
+- Apply the choice only to this task. Do not reuse a prior choice. Keep unrelated changes out of each commit and use clear messages that state each category's intent. Push only after the user chooses `Commit and push`.
+- If no remote or upstream branch is configured, explain this and ask before changing that configuration.

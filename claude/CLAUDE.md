@@ -3,6 +3,7 @@
 ## Writing Style
 
 - Use ASD-STE100 Simplified Technical English and Zinsser's four principles: simplicity, brevity, clarity, and humanity.
+- Use the same term for the same concept. State the main point directly. Add a transition when the reader might otherwise miss the connection. Use parallel phrasing when it helps readers compare items.
 
 ## Permissions
 
